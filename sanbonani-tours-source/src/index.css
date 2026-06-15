@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 180 55% 12%;
+    --foreground: 43 40% 94%;
+    --card: 180 30% 14%;
+    --card-foreground: 43 40% 94%;
+    --popover: 180 30% 14%;
+    --popover-foreground: 43 40% 94%;
+    --primary: 36 40% 64%;
+    --primary-foreground: 180 55% 12%;
+    --secondary: 180 30% 14%;
+    --secondary-foreground: 43 40% 94%;
+    --muted: 180 30% 14%;
+    --muted-foreground: 120 8% 57%;
+    --accent: 45 66% 52%;
+    --accent-foreground: 180 55% 12%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 180 20% 25%;
+    --input: 180 20% 25%;
+    --ring: 36 40% 64%;
+    --radius: 0.5rem;
+
+    /* Custom Sanbonani colors */
+    --teal-dark: #0F2E2E;
+    --teal: #1B4D4D;
+    --sand: #CBA77D;
+    --gold: #D4AF37;
+    --cream: #F5F0E6;
+    --sage: #8A9B8A;
+    --surface: #1A2E2E;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  body {
+    @apply bg-teal-dark text-cream font-body antialiased;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+
+  ::selection {
+    background: var(--gold);
+    color: var(--teal-dark);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--teal-dark);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--teal);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--teal-light);
+  }
+}
+
+@layer components {
+  .section-label {
+    @apply font-body font-medium text-[11px] tracking-[0.12em] uppercase text-gold mb-4;
+  }
+
+  .section-heading {
+    @apply font-display text-4xl md:text-5xl uppercase text-cream leading-[1.05] tracking-[-0.02em];
+  }
+
+  .section-subheading {
+    @apply font-body font-light text-base leading-[1.7] text-cream/70;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 bg-sand text-teal-dark px-10 py-4 font-body font-medium text-[13px] uppercase tracking-[0.06em] transition-all duration-400;
+  }
+
+  .btn-primary:hover {
+    @apply bg-gold;
+    transform: translateY(-2px);
+  }
+
+  .text-link {
+    @apply font-body font-medium text-[13px] uppercase tracking-[0.06em] text-sand border-b border-sand transition-all duration-300 pb-1;
+  }
+
+  .text-link:hover {
+    @apply text-gold border-gold;
+  }
+
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@layer utilities {
+  .duration-400 {
+    transition-duration: 400ms;
+  }
+
+  .duration-500 {
+    transition-duration: 500ms;
+  }
+
+  .duration-600 {
+    transition-duration: 600ms;
+  }
+}
