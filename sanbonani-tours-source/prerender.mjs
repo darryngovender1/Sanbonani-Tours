@@ -1,9 +1,10 @@
 /**
  * Post-build prerender: serves dist/ with `vite preview`, visits each route in
- * headless Edge and saves the fully-rendered HTML to dist/<route>/index.html.
+ * a headless browser and saves the fully-rendered HTML to dist/<route>/index.html.
  *
- * Skips gracefully when no Edge/Chrome is available (e.g. Netlify CI) — the
- * site still works as a plain SPA thanks to the _redirects fallback.
+ * Browser: local Edge/Chrome when present (dev machine), otherwise puppeteer's
+ * bundled Chromium (Netlify CI). Skips gracefully if no browser can be launched —
+ * the site still works as a plain SPA thanks to the _redirects fallback.
  */
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
@@ -19,27 +20,58 @@ const BROWSER_CANDIDATES = [
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
 ]
 
-const executablePath = BROWSER_CANDIDATES.find((p) => existsSync(p))
-if (!executablePath) {
-  console.warn('[prerender] No Edge/Chrome found — skipping prerender (SPA fallback still works).')
-  process.exit(0)
+async function launchBrowser() {
+  const local = BROWSER_CANDIDATES.find((p) => existsSync(p))
+  if (local) {
+    const { default: puppeteer } = await import('puppeteer-core')
+    return puppeteer.launch({
+      executablePath: local,
+      headless: true,
+      args: ['--no-sandbox', '--disable-gpu'],
+    })
+  }
+  // CI (e.g. Netlify): no system browser — use puppeteer's bundled Chromium
+  const { default: puppeteer } = await import('puppeteer')
+  // The CI npm may skip postinstall scripts, so Chromium may not have been
+  // downloaded at install time — fetch it on demand (no-op if present).
+  let chromePath = null
+  try {
+    chromePath = puppeteer.executablePath()
+  } catch {
+    /* not resolved yet */
+  }
+  if (!chromePath || !existsSync(chromePath)) {
+    console.log('[prerender] downloading Chromium for CI…')
+    await new Promise((resolve, reject) => {
+      const inst = spawn('npx', ['puppeteer', 'browsers', 'install', 'chrome'], {
+        stdio: 'inherit',
+        shell: process.platform === 'win32',
+      })
+      inst.on('exit', (code) =>
+        code === 0 ? resolve() : reject(new Error(`browser install exited ${code}`)),
+      )
+    })
+  }
+  return puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
+  })
 }
 
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
-  stdio: 'pipe',
-  shell: true,
-})
+// Spawn vite directly via node — no npx/cmd wrapper, so server.kill() actually
+// kills the preview server. (A wrapper would survive the kill and keep holding
+// PORT, which made the NEXT build's prerender hang.)
+const server = spawn(
+  process.execPath,
+  [join('node_modules', 'vite', 'bin', 'vite.js'), 'preview', '--port', String(PORT), '--strictPort'],
+  { stdio: 'pipe' },
+)
 
-// On Windows, `shell: true` wraps the process in cmd.exe and server.kill()
-// only kills the wrapper — the actual vite preview node process survives and
-// keeps holding PORT, which makes the NEXT build's prerender hang. Kill the
-// whole tree with taskkill instead.
-const killServerTree = () => {
-  if (!server.pid) return
+const killServer = () => {
   try {
-    spawn('taskkill', ['/pid', String(server.pid), '/T', '/F'], { stdio: 'ignore', shell: true })
-  } catch {
     server.kill()
+  } catch {
+    /* already dead */
   }
 }
 
@@ -47,9 +79,9 @@ const killServerTree = () => {
 // the SPA fallback still works without prerendered HTML.
 const watchdog = setTimeout(() => {
   console.warn('[prerender] timed out — skipping (SPA fallback still works).')
-  killServerTree()
+  killServer()
   process.exit(0)
-}, 5 * 60 * 1000)
+}, 8 * 60 * 1000) // generous: CI may need to download Chromium first
 
 const waitForServer = () =>
   new Promise((resolve, reject) => {
@@ -69,12 +101,7 @@ const waitForServer = () =>
 
 async function main() {
   await waitForServer()
-  const { default: puppeteer } = await import('puppeteer-core')
-  const browser = await puppeteer.launch({
-    executablePath,
-    headless: true,
-    args: ['--no-sandbox', '--disable-gpu'],
-  })
+  const browser = await launchBrowser()
 
   try {
     const page = await browser.newPage()
@@ -108,13 +135,13 @@ async function main() {
   } finally {
     await browser.close()
     clearTimeout(watchdog)
-    killServerTree()
+    killServer()
   }
 }
 
 main().catch((err) => {
   console.warn('[prerender] failed:', err.message)
   clearTimeout(watchdog)
-  killServerTree()
+  killServer()
   process.exit(0) // never fail the build over prerendering
 })
