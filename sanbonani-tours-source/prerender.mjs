@@ -30,6 +30,27 @@ const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--stric
   shell: true,
 })
 
+// On Windows, `shell: true` wraps the process in cmd.exe and server.kill()
+// only kills the wrapper — the actual vite preview node process survives and
+// keeps holding PORT, which makes the NEXT build's prerender hang. Kill the
+// whole tree with taskkill instead.
+const killServerTree = () => {
+  if (!server.pid) return
+  try {
+    spawn('taskkill', ['/pid', String(server.pid), '/T', '/F'], { stdio: 'ignore', shell: true })
+  } catch {
+    server.kill()
+  }
+}
+
+// Watchdog: never let prerendering hang the build. Exit cleanly instead —
+// the SPA fallback still works without prerendered HTML.
+const watchdog = setTimeout(() => {
+  console.warn('[prerender] timed out — skipping (SPA fallback still works).')
+  killServerTree()
+  process.exit(0)
+}, 5 * 60 * 1000)
+
 const waitForServer = () =>
   new Promise((resolve, reject) => {
     const deadline = Date.now() + 30000
@@ -86,12 +107,14 @@ async function main() {
     }
   } finally {
     await browser.close()
-    server.kill()
+    clearTimeout(watchdog)
+    killServerTree()
   }
 }
 
 main().catch((err) => {
   console.warn('[prerender] failed:', err.message)
-  server.kill()
+  clearTimeout(watchdog)
+  killServerTree()
   process.exit(0) // never fail the build over prerendering
 })
