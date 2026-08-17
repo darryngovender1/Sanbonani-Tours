@@ -1,42 +1,31 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { galleryPreview } from '../data/gallery'
+import { galleryImages } from '../data/gallery'
 
-gsap.registerPlugin(ScrollTrigger)
-
-export default function Gallery() {
-  const sectionRef = useRef<HTMLElement>(null)
+export default function GalleryPage() {
   const gridRef = useRef<HTMLDivElement>(null)
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!sectionRef.current) return
+    document.title = 'Gallery | Sanbonani Tours — KZN Safaris & Dolphin Coast'
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute(
+        'content',
+        'A visual journey through KwaZulu-Natal with Sanbonani Tours — safari wildlife, Dolphin Coast beaches, St Lucia estuary and North Coast attractions.'
+      )
+    window.scrollTo(0, 0)
+  }, [])
 
-    const ctx = gsap.context(() => {
-      if (gridRef.current) {
-        const items = gridRef.current.querySelectorAll('.gallery-item')
-        gsap.fromTo(
-          items,
-          { opacity: 0, scale: 0.95 },
-          {
-            opacity: 1,
-            scale: 1,
-            duration: 0.8,
-            stagger: 0.08,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: gridRef.current,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-    }, sectionRef)
-
-    return () => ctx.revert()
+  useEffect(() => {
+    if (!gridRef.current) return
+    const items = gridRef.current.querySelectorAll('.gallery-item')
+    gsap.fromTo(
+      items,
+      { opacity: 0, scale: 0.95 },
+      { opacity: 1, scale: 1, duration: 0.8, stagger: 0.06, ease: 'power3.out' }
+    )
   }, [])
 
   // Close lightbox on escape
@@ -51,16 +40,18 @@ export default function Gallery() {
   return (
     <>
       <section
-        ref={sectionRef}
-        id="gallery"
-        className="w-full py-24 md:py-32 px-[5vw]"
+        className="w-full pt-40 pb-24 md:pb-32 px-[5vw] min-h-screen"
         style={{ background: '#0F2E2E' }}
       >
         <div className="max-w-[1280px] mx-auto">
           {/* Header */}
           <div className="mb-16 text-center">
-            <div className="section-label">Visual Journey</div>
-            <h2 className="section-heading">KZN Through Our Lens</h2>
+            <div className="section-label">Gallery</div>
+            <h1 className="section-heading">KZN Through Our Lens</h1>
+            <p className="section-subheading mt-5 max-w-[560px] mx-auto">
+              Safari moments, coastline and North Coast attractions — shot on our
+              journeys across KwaZulu-Natal.
+            </p>
           </div>
 
           {/* Grid - Masonry-like layout */}
@@ -68,7 +59,7 @@ export default function Gallery() {
             ref={gridRef}
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[250px]"
           >
-            {galleryPreview.map((img, i) => (
+            {galleryImages.map((img, i) => (
               <div
                 key={i}
                 className={`gallery-item relative overflow-hidden cursor-pointer group ${img.span}`}
@@ -99,10 +90,10 @@ export default function Gallery() {
             ))}
           </div>
 
-          {/* Link to full gallery */}
-          <div className="mt-14 text-center">
-            <Link to="/gallery" className="btn-primary">
-              View Full Gallery
+          {/* Back link */}
+          <div className="mt-16 text-center">
+            <Link to="/" className="text-link">
+              ← Back to Home
             </Link>
           </div>
         </div>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router'
 
 const navLinks = [
   { label: 'Destinations', href: '#destinations' },
   { label: 'Experiences', href: '#experiences' },
+  { label: 'Things to Do', href: '#things-to-do' },
   { label: 'The Journey', href: '#gallery' },
   { label: 'Contact', href: '#contact' },
 ]
@@ -10,6 +12,7 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { pathname } = useLocation()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,6 +25,12 @@ export default function Navbar() {
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault()
     setMobileOpen(false)
+    if (pathname !== '/') {
+      // Section anchors live on the home page — navigate there and let the
+      // browser jump to the hash natively
+      window.location.href = `/${href}`
+      return
+    }
     const target = document.querySelector(href)
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' })

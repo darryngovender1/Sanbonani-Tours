@@ -142,6 +142,9 @@ export default function ContactCTA() {
           Tell us your travel dates, your party size, and your dreams. We&apos;ll craft an
           itinerary within 48 hours.
         </p>
+        <p className="font-body text-xs text-cream/50 mt-3 tracking-wide">
+          Based in Tinley Manor, KZN North Coast — touring across South Africa.
+        </p>
 
         {/* Quick Contact Form */}
         {!formSubmitted ? (

@@ -25,7 +25,7 @@ const features = [
       </svg>
     ),
     title: 'Conservation First',
-    body: 'A portion of every booking supports conservation and community upliftment in rural Zululand.',
+    body: 'A portion of every booking supports conservation and community upliftment.',
   },
   {
     icon: (
